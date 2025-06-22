@@ -20,13 +20,9 @@ import {
 
 interface Message {
   id: string
-  from_address?: string
-  to_address?: string
+  from_address: string
   subject: string
-  received_at?: number
-  sent_at?: number
-  content?: string
-  html?: string
+  received_at: number
 }
 
 interface MessageListProps {
@@ -34,10 +30,8 @@ interface MessageListProps {
     id: string
     address: string
   }
-  messageType: 'received' | 'sent'
-  onMessageSelect: (messageId: string | null, messageType?: 'received' | 'sent') => void
+  onMessageSelect: (messageId: string | null) => void
   selectedMessageId?: string | null
-  refreshTrigger?: number
 }
 
 interface MessageResponse {
@@ -46,13 +40,13 @@ interface MessageResponse {
   total: number
 }
 
-export function MessageList({ email, messageType, onMessageSelect, selectedMessageId, refreshTrigger }: MessageListProps) {
+export function MessageList({ email, onMessageSelect, selectedMessageId }: MessageListProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [loadingMore, setLoadingMore] = useState(false)
-  const pollTimeoutRef = useRef<Timer>(null)
+  const pollTimeoutRef = useRef<Timer>()
   const messagesRef = useRef<Message[]>([]) // 添加 ref 来追踪最新的消息列表
   const [total, setTotal] = useState(0)
   const [messageToDelete, setMessageToDelete] = useState<Message | null>(null)
@@ -66,9 +60,6 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
   const fetchMessages = async (cursor?: string) => {
     try {
       const url = new URL(`/api/emails/${email.id}`, window.location.origin)
-      if (messageType === 'sent') {
-        url.searchParams.set('type', 'sent')
-      }
       if (cursor) {
         url.searchParams.set('cursor', cursor)
       }
@@ -118,7 +109,7 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
   const stopPolling = () => {
     if (pollTimeoutRef.current) {
       clearInterval(pollTimeoutRef.current)
-      pollTimeoutRef.current = null
+      pollTimeoutRef.current = undefined
     }
   }
 
@@ -142,7 +133,7 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
 
   const handleDelete = async (message: Message) => {
     try {
-      const response = await fetch(`/api/emails/${email.id}/${message.id}${messageType === 'sent' ? '?type=sent' : ''}`, {
+      const response = await fetch(`/api/emails/${email.id}/${message.id}`, {
         method: "DELETE"
       })
 
@@ -193,14 +184,6 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email.id])
 
-  useEffect(() => {
-    if (refreshTrigger && refreshTrigger > 0) {
-      setRefreshing(true)
-      fetchMessages()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshTrigger])
-
   return (
   <>
     <div className="h-full flex flex-col">
@@ -227,7 +210,7 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
             {messages.map(message => (
               <div
                 key={message.id}
-                onClick={() => onMessageSelect(message.id, messageType)}
+                onClick={() => onMessageSelect(message.id)}
                 className={cn(
                   "p-3 hover:bg-primary/5 cursor-pointer group",
                   selectedMessageId === message.id && "bg-primary/10"
@@ -238,12 +221,10 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm truncate">{message.subject}</p>
                     <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
-                      <span className="truncate">
-                        {message.from_address || message.to_address || ''}
-                      </span>
+                      <span className="truncate">{message.from_address}</span>
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        {new Date(message.received_at || message.sent_at || 0).toLocaleString()}
+                        {new Date(message.received_at).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -269,7 +250,7 @@ export function MessageList({ email, messageType, onMessageSelect, selectedMessa
           </div>
         ) : (
           <div className="p-4 text-center text-sm text-gray-500">
-            {messageType === 'sent' ? '暂无发送的邮件' : '暂无收到的邮件'}
+            暂无邮件
           </div>
         )}
       </div>

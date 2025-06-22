@@ -93,13 +93,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       message: {
         id: message.id,
         from_address: message.fromAddress,
-        to_address: message.toAddress,
         subject: message.subject,
         content: message.content,
         html: message.html,
-        received_at: message.receivedAt.getTime(),
-        sent_at: message.receivedAt.getTime(),
-        type: message.type as 'received' | 'sent'
+        received_at: message.receivedAt.getTime()
       }
     })
   } catch (error) {

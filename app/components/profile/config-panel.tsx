@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select"
 import { EMAIL_CONFIG } from "@/config"
 
-export function WebsiteConfigPanel() {
+export function ConfigPanel() {
   const [defaultRole, setDefaultRole] = useState<string>("")
   const [emailDomains, setEmailDomains] = useState<string>("")
   const [adminContact, setAdminContact] = useState<string>("")
